@@ -21,7 +21,6 @@ public:
     int getDuration() const {
         return (this->customer).serviceDuration;
     }
-private:    
     void setBusy() {this->status = BUSY;}
     void setIdle() {this->status = IDLE;}
 };
