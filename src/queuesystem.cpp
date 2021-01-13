@@ -12,8 +12,9 @@ QueueSystem::QueueSystem(int ttime, int wnum) :
 
 // init: 每一次run前的初始化，创建一个到达事件，并设置为当前事件
 void QueueSystem::init() {
-    curEvent = new Event();
-    Customer cus(curEvent->occur_time);
+    Event tmp_event;
+    eventQueue.push(tmp_event);
+    Customer cus(tmp_event.occur_time);
     waitQueue.push(cus);
 }
 
@@ -50,7 +51,11 @@ void QueueSystem::simulate(int times) {
 // total_stay_time: 当前次运行时，顾客总的等待时间
 double QueueSystem::run() {
     init();
-    while(curEvent) {
+    while(!eventQueue.empty()) {
+        // 从事件队列中取一个事件
+        curEvent = new Event(eventQueue.top());
+        eventQueue.pop();
+        
         if(curEvent ->event_type == -1) {
             customerArrived(); // 处理顾客到达事件
         }
@@ -59,8 +64,6 @@ double QueueSystem::run() {
         }
         // 回收空间
         delete curEvent; 
-        // 从事件队列中取一个事件，可能是 nullptr空事件
-        curEvent = new Event(eventQueue.top());
     }
     end(); // 清空这一次运行的转态
 
