@@ -13,7 +13,8 @@ QueueSystem::QueueSystem(int ttime, int wnum) :
 // init: 每一次run前的初始化，创建一个到达事件，并设置为当前事件
 void QueueSystem::init() {
     curEvent = new Event();
-    waitQueue.push(Customer(curEvent->occur_time));
+    Customer cus(curEvent->occur_time);
+    waitQueue.push(cus);
 }
 
 // 析构：回收动态分配的空间
@@ -38,7 +39,7 @@ void QueueSystem::simulate(int times) {
         sum += run(); 
     }
     // sum 每次的平均等待时间之和，除以模拟次数就是平均等待时间
-    avg_stay_time = (double)sum/times;
+    avg_stay_time = sum/times;
     // total_total是每一次模拟的客户的综合
     avg_customers = (double)total_customer/(times*total_time);
 }
@@ -47,7 +48,7 @@ void QueueSystem::simulate(int times) {
 // 负责运行一次，并返回这一次顾客的平均等待时间
 // total_stay_time/total_customer
 // total_stay_time: 当前次运行时，顾客总的等待时间
-int QueueSystem::run() {
+double QueueSystem::run() {
     init();
     while(curEvent) {
         if(curEvent ->event_type == -1) {
@@ -59,7 +60,7 @@ int QueueSystem::run() {
         // 回收空间
         delete curEvent; 
         // 从事件队列中取一个事件，可能是 nullptr空事件
-        curEvent = &(eventQueue.top());
+        curEvent = new Event(eventQueue.top());
     }
     end(); // 清空这一次运行的转态
 
@@ -81,9 +82,10 @@ void QueueSystem::end() {
 
 // 清空队列：使用stl标准的swap函数，更加高效
 template<class T>
-void QueueSystem::clear(priority_queue<T&> &que) {
-    queue<T&> empty;
-    swap(empty, que);
+void QueueSystem::clear(priority_queue<T>& que) {
+    while (!que.empty()) {
+        que.pop();
+    }
 }
 
 /* 处理客户到达事件，主要负责：
@@ -96,10 +98,12 @@ void QueueSystem::customerArrived() {
     // 随机生成下一个到达事件的到达事件
     int time = curEvent->occur_time + Random::uniform(50);
     if(time < total_time) {
-        eventQueue.push(Event(time, -1));
+        Event event(time, -1);
+        eventQueue.push(event);
     }
     // 将当前的到达顾客放置到等待队列中
-    waitQueue.push(Customer(curEvent->occur_time));
+    Customer cus(curEvent->occur_time);
+    waitQueue.push(cus);
 
     // 若有空闲窗口，则将当前事件中的顾客服务
     int idleWindow = getIdleServiceWindow();
@@ -111,7 +115,8 @@ void QueueSystem::customerArrived() {
         windows[idleWindow].setBusy();
 
         // 客户被服务，还需要另外创建一个客户离开事件
-        eventQueue.push(Event(cus.arrivalTime+cus.serviceDuration, idleWindow));
+        Event tmp_event(cus.arrivalTime + cus.serviceDuration, idleWindow);
+        eventQueue.push(tmp_event);
     }
 }
 
@@ -145,5 +150,6 @@ void QueueSystem::customerDeparture() {
     windows[pos].serverCustomer(cus);
 
     // 添加一个离开事件
-    eventQueue.push(Event(occur_time+cus.serviceDuration, pos));
+    Event tmp_event(occur_time + cus.serviceDuration, pos);
+    eventQueue.push(tmp_event);
 }
