@@ -37,4 +37,4 @@ private:
     void customerDeparture(); // 处理顾客离开事件
 };
 
-#endif;
+#endif
